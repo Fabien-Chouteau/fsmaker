@@ -1,0 +1,17 @@
+name = "fsmaker"
+description = "Shiny new project"
+version = "0.0.0"
+
+authors = ["Fabien Chouteau"]
+maintainers = ["Fabien Chouteau <fabien.chouteau@gmail.com>"]
+maintainers-logins = ["Fabien-Chouteau"]
+
+executables = ["fsmaker"]
+
+[[depends-on]]
+gnat_native = "^10.3.0-1"
+ada_toml = "~0.1.0"
+littlefs = "~0.1.0"
+ansiada = "~0.1.0"
+simple_logging = "^1.2.0"
+aaa = "~0.2.3"
