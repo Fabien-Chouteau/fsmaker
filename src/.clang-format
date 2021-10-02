@@ -1,5 +1,5 @@
 BasedOnStyle: GNU
-ColumnLimit: 79
+ColumnLimit: 80
 ContinuationIndentWidth: 2
 IndentWidth: 2
 ReflowComments: true

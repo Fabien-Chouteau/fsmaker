@@ -33,7 +33,7 @@ package body FSmaker.Commands.Tree is
    overriding
    procedure Setup_Switches
      (This   : in out Instance;
-      Config : in out CLIC.Subcommander.Switches_Configuration)
+      Config : in out CLIC.Subcommand.Switches_Configuration)
    is
    begin
       null;

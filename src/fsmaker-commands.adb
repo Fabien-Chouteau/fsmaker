@@ -30,9 +30,9 @@ package body FSmaker.Commands is
    -------------------------
 
    procedure Set_Global_Switches
-     (Config : in out CLIC.Subcommander.Switches_Configuration)
+     (Config : in out CLIC.Subcommand.Switches_Configuration)
    is
-      use CLIC.Subcommander;
+      use CLIC.Subcommand;
    begin
       Define_Switch (Config,
                      Sw_Format'Access,
@@ -131,6 +131,15 @@ package body FSmaker.Commands is
 
             --  The file doesn't exists, we try to create it
             This.FD := Create_File (Image_Path, Binary);
+            if This.FD = Invalid_FD then
+               This.Failure ("Cannot create file '" & Image_Path & "'");
+            else
+
+               --  Create_File opens in read-only mode, so we close and re-open
+               --  in read-write mode.
+               This.Close_Image;
+               This.FD := Open_Read_Write (Image_Path, Binary);
+            end if;
 
          elsif not GNAT.OS_Lib.Is_Owner_Writable_File (Image_Path) then
             This.Failure ("Image file '" & Image_Path & "' is not writable");

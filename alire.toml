@@ -10,8 +10,12 @@ executables = ["fsmaker"]
 
 [[depends-on]]
 gnat_native = "^10.3.0-1"
-ada_toml = "~0.1.0"
-littlefs = "~0.1.0"
-ansiada = "~0.1.0"
-simple_logging = "^1.2.0"
-aaa = "~0.2.3"
+ada_toml = "*"
+littlefs = "*"
+ansiada = "*"
+simple_logging = "*"
+aaa = "*"
+clic = "*"
+
+[[pins]]
+clic = { url='https://github.com/alire-project/clic.git' }

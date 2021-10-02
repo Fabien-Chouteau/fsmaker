@@ -1,15 +1,15 @@
-with CLIC.Subcommander;
+with CLIC.Subcommand;
 
 private with Ada.Text_IO;
 private with GNAT.OS_Lib;
-private with CLIC.Subcommander.Instance;
+private with CLIC.Subcommand.Instance;
 private with CLIC.TTY;
 private with FSmaker.Target;
 
 package FSmaker.Commands is
 
    procedure Set_Global_Switches
-     (Config : in out CLIC.Subcommander.Switches_Configuration);
+     (Config : in out CLIC.Subcommand.Switches_Configuration);
 
    procedure Execute;
 
@@ -19,7 +19,11 @@ package FSmaker.Commands is
    function Verbose return Boolean;
    function Debug return Boolean;
 
-   type Command is abstract new CLIC.Subcommander.Command with private;
+   type Command is abstract new CLIC.Subcommand.Command with private;
+
+   function Switch_Parsing (This : Command)
+                            return CLIC.Subcommand.Switch_Parsing_Kind
+   is (CLIC.Subcommand.Parse_All);
 
    procedure Setup_Image (This      : in out Command;
                           To_Format :        Boolean := False);
@@ -55,7 +59,7 @@ private
 
    procedure Put_Error (Str : String);
 
-   package Sub_Cmd is new CLIC.Subcommander.Instance
+   package Sub_Cmd is new CLIC.Subcommand.Instance
      (Main_Command_Name   => "fsmaker",
       Version             => "0.1.0-dev",
       Set_Global_Switches => Set_Global_Switches,
@@ -69,7 +73,7 @@ private
       TTY_Underline       => CLIC.TTY.Underline,
       TTY_Emph            => CLIC.TTY.Emph);
 
-   type Command is abstract new CLIC.Subcommander.Command with record
+   type Command is abstract new CLIC.Subcommand.Command with record
       FD     : GNAT.OS_Lib.File_Descriptor;
       Target : FSmaker.Target.Any_Filesystem_Ref := null;
    end record;

@@ -1,4 +1,4 @@
-with CLIC.Subcommander;
+with CLIC.Subcommand;
 with AAA.Strings;
 
 package FSmaker.Commands.Mkdir is
@@ -9,7 +9,7 @@ package FSmaker.Commands.Mkdir is
    with private;
 
    overriding
-   function Name (This : Instance) return CLIC.Subcommander.Identifier
+   function Name (This : Instance) return CLIC.Subcommand.Identifier
    is ("mkdir");
 
    overriding
@@ -24,7 +24,7 @@ package FSmaker.Commands.Mkdir is
    overriding
    procedure Setup_Switches
      (This    : in out Instance;
-      Config  : in out CLIC.Subcommander.Switches_Configuration);
+      Config  : in out CLIC.Subcommand.Switches_Configuration);
 
    overriding
    function Short_Description (This : Instance) return String

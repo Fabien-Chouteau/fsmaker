@@ -1,6 +1,8 @@
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
+with GNAT.Source_Info;
+
 with System;
 with Interfaces;   use Interfaces;
 with Interfaces.C; use Interfaces.C;
@@ -74,6 +76,8 @@ package body FSmaker.Target.LittleFS is
          if GNAT.OS_Lib.Read (FD, Buffer, Integer (Size)) = Integer (Size) then
             return 0;
          else
+            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
+                                    GNAT.OS_Lib.Errno_Message);
             return LFS_ERR_IO;
          end if;
       end Read;
@@ -99,6 +103,8 @@ package body FSmaker.Target.LittleFS is
          if GNAT.OS_Lib.Write (FD, Buffer, Integer (Size)) = Integer (Size) then
             return 0;
          else
+            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
+                                    GNAT.OS_Lib.Errno_Message);
             return LFS_ERR_IO;
          end if;
       end Prog;
@@ -126,6 +132,8 @@ package body FSmaker.Target.LittleFS is
          if GNAT.OS_Lib.Write (FD, Zeros'Address, Size) = Size then
             return 0;
          else
+            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
+                                    GNAT.OS_Lib.Errno_Message);
             return LFS_ERR_IO;
          end if;
       end Erase;
@@ -221,13 +229,8 @@ package body FSmaker.Target.LittleFS is
    begin
       Simple_Logging.Always ("File size: " & GNAT.OS_Lib.File_Length (FD)'Img);
 
-      if ftruncate (int (FD), Long_Integer (Size)) /= 0 then
-         raise Program_Error with "ftruncate error: " &
-           GNAT.OS_Lib.Errno_Message;
-      end if;
-
       if GNAT.OS_Lib.File_Length (FD) /= Long_Integer (Size) then
-         raise Program_Error with "Cannot change file size";
+         raise Program_Error with "File size different than expected";
       end if;
 
       Config := FD_Backend.Create (FD_Aliased);
