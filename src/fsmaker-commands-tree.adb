@@ -18,7 +18,7 @@ package body FSmaker.Commands.Tree is
          Pretty_Print (Dir);
       elsif Args.Count /= 1 then
          This.Failure ("takes one or no argument");
-      elsif (not Valid_Target_Path (Args (1))) then
+      elsif not Valid_Target_Path (Args (1)) then
          This.Failure ("Invalid target path: '" & String'(Args (1)) & "'");
       else
          Dir := This.Target.Tree (To_Target_Path (Args (1)));

@@ -10,14 +10,19 @@ with Simple_Logging; use Simple_Logging;
 with FSmaker.Target;
 with FSmaker.Target.LittleFS;
 with FSmaker.Source;
+with FSmaker.Source.File;
+with FSmaker.Block_Device;
+with FSmaker.Block_Device.File;
 
 package body FSmaker.TOML is
 
    type FS_Format is (LFS);
+   pragma Unreferenced (LFS);
 
    type Image_Info is record
-      Format : FS_Format;
-      Size   : Natural;
+      Format           : FS_Format;
+      Block_Size       : Positive;
+      Number_Of_Blocks : Positive;
    end record;
 
    function Open_Image (Path_To_Output : String) return File_Descriptor;
@@ -53,7 +58,8 @@ package body FSmaker.TOML is
       end if;
 
       if FD = Invalid_FD then
-         raise Program_Error with "Cannot open image file '" & Path_To_Output & "'";
+         raise Program_Error
+           with "Cannot open image file '" & Path_To_Output & "'";
       end if;
 
       return FD;
@@ -82,15 +88,37 @@ package body FSmaker.TOML is
       end;
 
       declare
-         Size : constant TOML_Value := V.Get_Or_Null ("size");
+         Size : constant TOML_Value := V.Get_Or_Null ("block_size");
       begin
          if Size.Is_Null then
-            raise Program_Error with "missing 'size'";
-         elsif Size.Kind /= TOML_Integer then
-            raise Program_Error with "'size' should be an integer";
+            raise Program_Error with "missing 'block_size'";
+         elsif Size.Kind /= TOML_Integer
+           or else
+             Size.As_Integer < 1
+         then
+            raise Program_Error
+              with "'block_size' should be a positive integer";
          end if;
 
-         Res.Size := Natural (Size.As_Integer);
+         Res.Block_Size := Positive (Size.As_Integer);
+      end;
+
+      declare
+         Number_Of_Blocks : constant TOML_Value :=
+           V.Get_Or_Null ("number_of_blocks");
+      begin
+         if Number_Of_Blocks.Is_Null then
+            raise Program_Error with "missing 'number_of_blocks'";
+
+         elsif Number_Of_Blocks.Kind /= TOML_Integer
+           or else
+             Number_Of_Blocks.As_Integer < 1
+         then
+            raise Program_Error
+              with "'number_of_blocks' should be a Positive integer";
+         end if;
+
+         Res.Number_Of_Blocks := Positive (Number_Of_Blocks.As_Integer);
       end;
 
       return Res;
@@ -100,7 +128,7 @@ package body FSmaker.TOML is
    -- Mkdir --
    -----------
 
-   procedure Mkdir (T : not null Target.Any_Filesystem_Ref;
+   procedure Mkdir (T  : not null Target.Any_Filesystem_Ref;
                     Mk : TOML_Value)
    is
    begin
@@ -115,7 +143,7 @@ package body FSmaker.TOML is
 
       for Index in 1 .. Mk.Length loop
          declare
-            Dir : constant String := MK.Item (Index).As_String;
+            Dir : constant String := Mk.Item (Index).As_String;
          begin
             if not Valid_Target_Path (Dir) then
                raise Program_Error with "Invalid target path: '" & Dir & "'";
@@ -137,9 +165,9 @@ package body FSmaker.TOML is
       if Imp.Is_Null then
          Simple_Logging.Always ("No imports");
          return;
-      elsif imp.Kind /= TOML_Table then
+      elsif Imp.Kind /= TOML_Table then
          raise Program_Error with
-           "'[import]' section should be an table (" &
+           "'[import]' section should be a table (" &
            Imp.Kind'Img & ")";
       end if;
 
@@ -157,9 +185,11 @@ package body FSmaker.TOML is
             end if;
 
             declare
-               Src : Source.Instance := Source.Create (Val.As_String);
+               Src : Source.File.Instance :=
+                 Source.File.Create (Val.As_String);
             begin
                T.Import (To_Target_Path (Key), Src);
+               Src.Close;
             end;
          end;
       end loop;
@@ -173,6 +203,9 @@ package body FSmaker.TOML is
       Img_Info : Image_Info;
 
       T : Target.Any_Filesystem_Ref;
+
+      BD : FSmaker.Block_Device.Acc_Any;
+
    begin
       if Root.Kind /= TOML_Table then
          raise Program_Error with "Invalid TOML file. Table expected";
@@ -180,10 +213,13 @@ package body FSmaker.TOML is
 
       Img_Info := Get_Image_Info (Root);
 
+      BD := FSmaker.Block_Device.File.Create (FD,
+                                              Img_Info.Block_Size,
+                                              Img_Info.Number_Of_Blocks);
       T := new Target.LittleFS.Instance;
-      T.Format (FD, Size => Img_Info.Size);
+      T.Format (BD);
 
-      T.Mount (FD);
+      T.Mount (BD);
 
       declare
          Mk : constant TOML_Value := Root.Get_Or_Null ("mkdir");
@@ -205,14 +241,14 @@ package body FSmaker.TOML is
 
    procedure Build_From_TOML (Path_To_TOML, Path_To_Output : String) is
 
-      Result : Read_Result := File_IO.Load_File (Path_To_TOML);
+      Result : constant Read_Result := File_IO.Load_File (Path_To_TOML);
       FD : File_Descriptor;
    begin
       if Result.Success then
          FD := Open_Image (Path_To_Output);
          Process_TOML (Result.Value, FD);
       else
-         raise Program_Error with Path_To_Toml & ":" & Format_Error (Result);
+         raise Program_Error with Path_To_TOML & ":" & Format_Error (Result);
       end if;
    end Build_From_TOML;
 

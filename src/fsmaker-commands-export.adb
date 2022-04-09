@@ -1,6 +1,4 @@
-with FSmaker.Source;
 with FSmaker.Sink.File;
-with FSmaker.Sink.Hexdump;
 
 package body FSmaker.Commands.Export is
 
@@ -13,13 +11,12 @@ package body FSmaker.Commands.Export is
      (This : in out Instance;
       Args : AAA.Strings.Vector)
    is
-      Dir : Directory_Tree;
    begin
       This.Setup_Image;
 
       if Args.Count /= 2 then
          This.Failure ("takes exactly two arguments");
-      elsif (not Valid_Target_Path (Args (1))) then
+      elsif not Valid_Target_Path (Args (1)) then
          This.Failure ("Invalid target path: '" & String'(Args (1)) & "'");
       else
          declare

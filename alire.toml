@@ -1,6 +1,6 @@
 name = "fsmaker"
-description = "Shiny new project"
-version = "0.0.0"
+description = "Command line tool to create embedded filesystem images"
+version = "0.1.0"
 
 authors = ["Fabien Chouteau"]
 maintainers = ["Fabien Chouteau <fabien.chouteau@gmail.com>"]
@@ -9,7 +9,6 @@ maintainers-logins = ["Fabien-Chouteau"]
 executables = ["fsmaker"]
 
 [[depends-on]]
-gnat_native = "^10.3.0-1"
 ada_toml = "*"
 littlefs = "*"
 ansiada = "*"

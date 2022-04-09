@@ -1,5 +1,6 @@
 with Ada.Unchecked_Deallocation;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with System.Address_To_Access_Conversions;
 
 with GNAT.Source_Info;
 
@@ -13,6 +14,9 @@ with Littlefs; use Littlefs;
 
 package body FSmaker.Target.LittleFS is
 
+   package BD_Ptr
+   is new System.Address_To_Access_Conversions (Block_Device.Class);
+
    function ftruncate (FS : int;
                        Length : Long_Integer)
                        return int;
@@ -25,13 +29,13 @@ package body FSmaker.Target.LittleFS is
    procedure Free is new Ada.Unchecked_Deallocation (LFS_Config,
                                                      LFS_Config_Access);
 
-   package FD_Backend is
-      function Create (FD : aliased GNAT.OS_Lib.File_Descriptor)
+   package Backend is
+      function Create (BD : BD_Ptr.Object_Pointer)
                        return LFS_Config_Access;
 
-   end FD_Backend;
+   end Backend;
 
-   package body FD_Backend is
+   package body Backend is
 
       function Read (C      : access constant LFS_Config;
                      Block  : LFS_Block;
@@ -66,20 +70,18 @@ package body FSmaker.Target.LittleFS is
                      Size   : LFS_Size)
                      return int
       is
-         Offset : constant LFS_Offset := Off + C.Block_Size * LFS_Size (Block);
-         FD : GNAT.OS_Lib.File_Descriptor with Address => C.Context;
+         BD : constant BD_Ptr.Object_Pointer := BD_Ptr.To_Pointer (C.Context);
       begin
-         GNAT.OS_Lib.Lseek (FD     => FD,
-                            offset => Long_Integer (Offset),
-                            origin => GNAT.OS_Lib.Seek_Set);
-
-         if GNAT.OS_Lib.Read (FD, Buffer, Integer (Size)) = Integer (Size) then
-            return 0;
-         else
-            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
-                                    GNAT.OS_Lib.Errno_Message);
-            return LFS_ERR_IO;
-         end if;
+         case BD.Read (Natural (Block),
+                       Natural (Off),
+                       Buffer,
+                       Natural (Size))
+         is
+            when Block_Device.Ok =>
+               return 0;
+            when Block_Device.Error =>
+               return LFS_ERR_IO;
+         end case;
       end Read;
 
       ----------
@@ -93,20 +95,18 @@ package body FSmaker.Target.LittleFS is
                      Size   : LFS_Size)
                      return int
       is
-         Offset : constant LFS_Offset := Off + C.Block_Size * LFS_Size (Block);
-         FD : GNAT.OS_Lib.File_Descriptor with Address => C.Context;
+         BD : constant BD_Ptr.Object_Pointer := BD_Ptr.To_Pointer (C.Context);
       begin
-         GNAT.OS_Lib.Lseek (FD     => FD,
-                            offset => Long_Integer (Offset),
-                            origin => GNAT.OS_Lib.Seek_Set);
-
-         if GNAT.OS_Lib.Write (FD, Buffer, Integer (Size)) = Integer (Size) then
-            return 0;
-         else
-            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
-                                    GNAT.OS_Lib.Errno_Message);
-            return LFS_ERR_IO;
-         end if;
+         case BD.Program (Natural (Block),
+                          Natural (Off),
+                          Buffer,
+                          Natural (Size))
+         is
+            when Block_Device.Ok =>
+               return 0;
+            when Block_Device.Error =>
+               return LFS_ERR_IO;
+         end case;
       end Prog;
 
       -----------
@@ -117,25 +117,14 @@ package body FSmaker.Target.LittleFS is
                       Block : LFS_Block)
                       return int
       is
-         Offset : constant LFS_Offset := C.Block_Size * LFS_Size (Block);
-         FD : GNAT.OS_Lib.File_Descriptor with Address => C.Context;
-
-         Zeros : constant array (1 .. C.Block_Size) of Unsigned_8 :=
-           (others => 0);
-
-         Size : constant Integer := Integer (C.Block_Size);
+         BD : constant BD_Ptr.Object_Pointer := BD_Ptr.To_Pointer (C.Context);
       begin
-         GNAT.OS_Lib.Lseek (FD     => FD,
-                            offset => Long_Integer (Offset),
-                            origin => GNAT.OS_Lib.Seek_Set);
-
-         if GNAT.OS_Lib.Write (FD, Zeros'Address, Size) = Size then
-            return 0;
-         else
-            Simple_Logging.Error (GNAT.Source_Info.Enclosing_Entity & ": " &
-                                    GNAT.OS_Lib.Errno_Message);
-            return LFS_ERR_IO;
-         end if;
+         case BD.Erase (Natural (Block)) is
+            when Block_Device.Ok =>
+               return 0;
+            when Block_Device.Error =>
+               return LFS_ERR_IO;
+         end case;
       end Erase;
 
       ----------
@@ -143,34 +132,36 @@ package body FSmaker.Target.LittleFS is
       ----------
 
       function Sync (C : access constant LFS_Config) return int is
-         pragma Unreferenced (C);
+         BD : constant BD_Ptr.Object_Pointer := BD_Ptr.To_Pointer (C.Context);
       begin
-         return 0;
+         case BD.Sync is
+            when Block_Device.Ok =>
+               return 0;
+            when Block_Device.Error =>
+               return LFS_ERR_IO;
+         end case;
       end Sync;
 
       ------------
       -- Create --
       ------------
 
-      function Create (FD   : aliased GNAT.OS_Lib.File_Descriptor)
-                       return LFS_Config_Access
+      function Create (BD : BD_Ptr.Object_Pointer) return LFS_Config_Access
       is
          Ret : constant LFS_Config_Access := new LFS_Config;
+
       begin
-         Ret.Context := FD'Address;
+         Ret.Context := BD_Ptr.To_Address (BD);
+         Ret.Block_Size :=  LFS_Size (BD.Block_Size);
+
          Ret.Read := Read'Access;
          Ret.Prog := Prog'Access;
          Ret.Erase := Erase'Access;
          Ret.Sync := Sync'Access;
-         Ret.Read_Size := 2048;
-         Ret.Prog_Size := 2048;
-         Ret.Block_Size := 2048;
+         Ret.Read_Size := Ret.Block_Size;
+         Ret.Prog_Size := Ret.Block_Size;
 
-         Simple_Logging.Debug ("Create FD backend -> File size: " &
-                                 GNAT.OS_Lib.File_Length (FD)'Img);
-
-         Ret.Block_Count :=
-           LFS_Size (GNAT.OS_Lib.File_Length (FD)) / Ret.Block_Size;
+         Ret.Block_Count := LFS_Size (BD.Number_Of_Blocks);
 
          Ret.Block_Cycles := 700;
          Ret.Cache_Size := Ret.Block_Size;
@@ -183,7 +174,7 @@ package body FSmaker.Target.LittleFS is
          Ret.Attr_Max := 0;
          return Ret;
       end Create;
-   end FD_Backend;
+   end Backend;
 
    ---------------
    -- Error_Img --
@@ -213,27 +204,19 @@ package body FSmaker.Target.LittleFS is
    ------------
 
    overriding
-   procedure Format (This : in out Instance;
-                     FD   :        GNAT.OS_Lib.File_Descriptor;
-                     Size :        Natural)
+   procedure Format (This             : in out   Instance;
+                     BD               : not null Block_Device.Acc_Any)
    is
       use GNAT.OS_Lib;
 
+      Size : constant Positive := BD.Block_Size * BD.Number_Of_Blocks;
       Unused : Integer;
 
       Err : int;
 
       Config : LFS_Config_Access;
-
-      FD_Aliased : aliased constant File_Descriptor := FD;
    begin
-      Simple_Logging.Always ("File size: " & GNAT.OS_Lib.File_Length (FD)'Img);
-
-      if GNAT.OS_Lib.File_Length (FD) /= Long_Integer (Size) then
-         raise Program_Error with "File size different than expected";
-      end if;
-
-      Config := FD_Backend.Create (FD_Aliased);
+      Config := Backend.Create (BD_Ptr.Object_Pointer (BD));
       Err := Format (This.LFS, Config.all);
       Free (Config);
 
@@ -247,13 +230,12 @@ package body FSmaker.Target.LittleFS is
    -----------
 
    overriding
-   procedure Mount (This : in out Instance;
-                    FD   :        GNAT.OS_Lib.File_Descriptor)
+   procedure Mount (This : in out   Instance;
+                    BD   : not null Block_Device.Acc_Any)
    is
       Err : int;
    begin
-      This.FD := FD;
-      This.Config := FD_Backend.Create (This.FD);
+      This.Config := Backend.Create (BD_Ptr.Object_Pointer (BD));
 
       Err := Mount (This.LFS, This.Config.all);
       if Err /= 0 then
@@ -332,7 +314,8 @@ package body FSmaker.Target.LittleFS is
                            Res.Append
                              (new Node'(Kind    => FSmaker.Dir,
                                         Name    => To_Unbounded_String (Name),
-                                        Entries => Tree_Rec (Dir_Path & Name & "/")));
+                                        Entries =>
+                                           Tree_Rec (Dir_Path & Name & "/")));
                         end case;
                      end if;
                   end;
@@ -356,9 +339,10 @@ package body FSmaker.Target.LittleFS is
    -- Import --
    ------------
 
+   overriding
    procedure Import (This      : in out Instance;
                      Path      :        Target_Path;
-                     Src       : in out Source.Instance)
+                     Src       : in out Source.Class)
    is
       Err : int;
       File : aliased LFS_File;
@@ -406,14 +390,13 @@ package body FSmaker.Target.LittleFS is
       if Err /= LFS_ERR_OK then
          raise Program_Error with "import: " & Error_Img (Err);
       end if;
-
-      Src.Close;
    end Import;
 
    ---------
    -- Cat --
    ---------
 
+   overriding
    procedure Cat (This : in out Instance;
                   Path :        Target_Path;
                   Dst  : in out FSmaker.Sink.Class)
@@ -438,14 +421,13 @@ package body FSmaker.Target.LittleFS is
             exit when Read_Len = 0;
 
             if Read_Len < 0 then
-               raise Program_Error with "cat: " & Error_Img (int (Err));
+               raise Program_Error with "cat: " & Error_Img (Err);
             end if;
 
             Write_Len := Dst.Write (Buffer'Address, Integer (Read_Len));
 
-            if Write_Len < 0 then
-               raise Program_Error with
-                 "cat: GNAT.OS_Lib.Write: " & GNAT.OS_Lib.Errno_Message;
+            if Integer_32 (Write_Len) /= Read_Len then
+               raise Program_Error with "Disk full?";
             end if;
 
             exit when Read_Len /= Buffer'Length;

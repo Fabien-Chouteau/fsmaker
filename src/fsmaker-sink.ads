@@ -2,8 +2,7 @@ with System;
 
 package FSmaker.Sink is
 
-   type Instance
-   is interface;
+   type Instance is interface;
    subtype Class is Instance'Class;
 
    type Acc is access all Instance;

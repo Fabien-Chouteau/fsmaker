@@ -14,7 +14,7 @@ package body FSmaker.Commands.Mkdir is
 
       if Args.Count /= 1 then
          This.Failure ("takes exactly one argument");
-      elsif (not Valid_Target_Path (Args (1))) then
+      elsif not Valid_Target_Path (Args (1)) then
          This.Failure ("Invalid target path: '" & String'(Args (1)) & "'");
       else
          This.Target.Make_Dir (To_Target_Path (Args (1)));

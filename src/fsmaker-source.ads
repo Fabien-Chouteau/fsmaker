@@ -1,27 +1,17 @@
 with System;
 
-private with GNAT.OS_Lib;
-
 package FSmaker.Source is
 
-   type Instance
-   is tagged private;
+   type Instance is interface;
+   subtype Class is Instance'Class;
 
-
-   function Create (Src : String) return Instance;
+   type Acc is access all Instance;
+   type Acc_Any is access all Class;
 
    function Read (This : in out Instance;
                   Addr :        System.Address;
                   Len  :        Natural)
-                  return Natural;
-
-   procedure Close (This : in out Instance);
-
-private
-
-   type Instance
-   is tagged record
-      FD : GNAT.OS_Lib.File_Descriptor := GNAT.OS_Lib.Invalid_FD;
-   end record;
+                  return Natural
+   is abstract;
 
 end FSmaker.Source;

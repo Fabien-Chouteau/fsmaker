@@ -17,11 +17,13 @@ private
       Do_Not_Close : Boolean := False;
    end record;
 
+   overriding
    function Write (This : in out Instance;
                    Addr :        System.Address;
                    Len  :        Natural)
                    return Natural;
 
+   overriding
    procedure Close (This : in out Instance);
 
 end FSmaker.Sink.File;

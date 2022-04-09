@@ -1,9 +1,8 @@
-with AAA.Strings;
-
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
-package body FSmaker.Source is
+with Simple_Logging;
 
+package body FSmaker.Source.File is
 
    ------------
    -- Create --
@@ -35,27 +34,10 @@ package body FSmaker.Source is
          raise Program_Error with "Cannot open source '" & Src & "'";
       end if;
 
+      Simple_Logging.Always ("File open: '" & Src & "'");
+
       return Res;
    end Create;
-
-   ----------
-   -- Read --
-   ----------
-
-   function Read (This : in out Instance;
-                  Addr :        System.Address;
-                  Len  :        Natural)
-                  return Natural
-   is
-      Res : Integer := Read (This.FD, Addr, Len);
-   begin
-      if Res < 0 then
-         raise Program_Error
-           with "Source read error: " & GNAT.OS_Lib.Errno_Message;
-      end if;
-
-      return Res;
-   end Read;
 
    -----------
    -- Close --
@@ -68,4 +50,23 @@ package body FSmaker.Source is
       end if;
    end Close;
 
-end FSmaker.Source;
+   ----------
+   -- Read --
+   ----------
+
+   overriding
+   function Read
+     (This : in out Instance; Addr : System.Address; Len : Natural)
+      return Natural
+   is
+      Res : constant Integer := Read (This.FD, Addr, Len);
+   begin
+      if Res < 0 then
+         raise Program_Error
+           with "Source read error: " & GNAT.OS_Lib.Errno_Message;
+      end if;
+
+      return Res;
+   end Read;
+
+end FSmaker.Source.File;

@@ -18,33 +18,26 @@ package body FSmaker.Commands.Init is
 
    begin
 
-
       case Args.Count is
          when 0 =>
-            This.Failure ("Missing argument <size>");
-         when 1 =>
-            declare
-               Arg : constant String := Args (1);
-               Size : Natural;
-            begin
-               Size := Natural'Value (Args (1));
 
-               This.Setup_Image (To_Format => True);
-               if ftruncate (int (This.FD), Long_Integer (Size)) /= 0 then
-                  raise Program_Error with "ftruncate error: " &
-                    GNAT.OS_Lib.Errno_Message;
-               end if;
+            This.Setup_Image (To_Format => True);
+            if ftruncate (int (This.FD),
+                          Long_Integer (This.Block_Size * This.Number_Of_Blocks)) /= 0
+            then
+               raise Program_Error with "ftruncate error: " &
+                 GNAT.OS_Lib.Errno_Message;
+            end if;
 
-               Simple_Logging.Always ("Format with Size:" & Size'Img);
+            Simple_Logging.Always
+              ("Format with Block_Size:" & This.Block_Size'Img &
+                 " Number_Of_Blocks:" & This.Number_Of_Blocks'Img);
 
-               This.Target.Format (This.FD, Size);
-               This.Success;
-            exception
-               when Constraint_Error =>
-                  This.Failure ("Invalid size argument: '" & Arg & "'");
-            end;
+            This.Target.Format (This.BD);
+            This.Success;
+
          when others =>
-            This.Failure ("Too many arguments");
+           This.Failure ("Too many arguments");
       end case;
    end Execute;
 

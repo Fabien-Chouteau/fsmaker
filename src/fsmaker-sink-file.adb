@@ -37,6 +37,7 @@ package body FSmaker.Sink.File is
    -- Write --
    -----------
 
+   overriding
    function Write
      (This : in out Instance; Addr : System.Address; Len : Natural)
       return Natural
@@ -49,6 +50,7 @@ package body FSmaker.Sink.File is
    -- Close --
    -----------
 
+   overriding
    procedure Close (This : in out Instance) is
    begin
       if This.Do_Not_Close then

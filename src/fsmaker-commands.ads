@@ -5,6 +5,7 @@ private with GNAT.OS_Lib;
 private with CLIC.Subcommand.Instance;
 private with CLIC.TTY;
 private with FSmaker.Target;
+private with FSmaker.Block_Device.File;
 
 package FSmaker.Commands is
 
@@ -21,6 +22,7 @@ package FSmaker.Commands is
 
    type Command is abstract new CLIC.Subcommand.Command with private;
 
+   overriding
    function Switch_Parsing (This : Command)
                             return CLIC.Subcommand.Switch_Parsing_Kind
    is (CLIC.Subcommand.Parse_All);
@@ -41,12 +43,16 @@ package FSmaker.Commands is
 private
 
    Sw_Format : aliased GNAT.OS_Lib.String_Access;
-   Sw_Image : aliased GNAT.OS_Lib.String_Access;
+   Sw_Image  : aliased GNAT.OS_Lib.String_Access;
+   Sw_Size   : aliased GNAT.OS_Lib.String_Access;
    Sw_Verbose : aliased Boolean;
    Sw_Debug : aliased Boolean;
 
    function Format return String
    is (if GNAT.OS_Lib."=" (Sw_Format, null) then "" else Sw_Format.all);
+
+   function Image_Size return String
+   is (if GNAT.OS_Lib."=" (Sw_Size, null) then "" else Sw_Size.all);
 
    function Image_Path return String
    is (if GNAT.OS_Lib."=" (Sw_Image, null) then "" else Sw_Image.all);
@@ -74,8 +80,13 @@ private
       TTY_Emph            => CLIC.TTY.Emph);
 
    type Command is abstract new CLIC.Subcommand.Command with record
+      Block_Size       : Positive := 1;
+      Number_Of_Blocks : Positive := 1;
       FD     : GNAT.OS_Lib.File_Descriptor;
+      BD     : FSmaker.Block_Device.Acc_Any := null;
       Target : FSmaker.Target.Any_Filesystem_Ref := null;
    end record;
+
+   procedure Parse_Image_Size (This : in out Command);
 
 end FSmaker.Commands;

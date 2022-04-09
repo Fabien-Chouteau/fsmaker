@@ -2,19 +2,19 @@ with GNAT.OS_Lib;
 
 with FSmaker.Source;
 with FSmaker.Sink;
+with FSmaker.Block_Device;
 
 package FSmaker.Target is
 
    type Filesystem is interface;
    type Any_Filesystem_Ref is access all Filesystem'Class;
 
-   procedure Format (This : in out Filesystem;
-                     FD   :        GNAT.OS_Lib.File_Descriptor;
-                     Size :        Natural)
+   procedure Format (This             : in out   Filesystem;
+                     BD               : not null Block_Device.Acc_Any)
    is abstract;
 
-   procedure Mount (This : in out Filesystem;
-                    FD   :        GNAT.OS_Lib.File_Descriptor)
+   procedure Mount (This : in out   Filesystem;
+                    BD   : not null Block_Device.Acc_Any)
    is abstract;
 
    procedure Make_Dir (This      : in out Filesystem;
@@ -28,7 +28,7 @@ package FSmaker.Target is
 
    procedure Import (This      : in out Filesystem;
                      Path      :        Target_Path;
-                     Src       : in out Source.Instance)
+                     Src       : in out Source.Class)
    is abstract;
 
    procedure Cat (This : in out Filesystem;

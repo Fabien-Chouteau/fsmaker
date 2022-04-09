@@ -32,7 +32,7 @@ package FSmaker.Commands.Init is
 
    overriding
    function Usage_Custom_Parameters (This : Instance) return String
-   is ("<size>");
+   is ("<block_size> <number_of_blocks>");
 
 private
 

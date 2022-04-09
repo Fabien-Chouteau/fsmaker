@@ -17,6 +17,7 @@ package body FSmaker.Sink.Hexdump is
    -- Write --
    -----------
 
+   overriding
    function Write (This : in out Instance;
                    Addr : System.Address;
                    Len : Natural)
@@ -42,7 +43,6 @@ package body FSmaker.Sink.Hexdump is
          Put (Str & ASCII.LF);
       end Put_Line;
 
-
       --------------
       -- Hex_Dump --
       --------------
@@ -52,6 +52,7 @@ package body FSmaker.Sink.Hexdump is
          function UInt8_To_Char (Val : Storage_Element) return Character;
          procedure Start_New_Line;
 
+         pragma Style_Checks ("M120");
          --  Hexdump format:
          --         0000_0000_0000_0000: 57 69 6B 69 70 65 64 69 61 2C 20 74 68 65 20 66  Wikipedia, the f
          --  Addr : ^^^^^^^^^^^^^^^^^^^^
@@ -152,7 +153,6 @@ package body FSmaker.Sink.Hexdump is
          This.Addr := This.Addr + Addr;
       end Hex_Dump;
 
-
       Data : Storage_Array (1 .. Storage_Offset (Len)) with Address => Addr;
    begin
       Hex_Dump (Data);
@@ -163,6 +163,7 @@ package body FSmaker.Sink.Hexdump is
    -- Close --
    -----------
 
+   overriding
    procedure Close (This : in out Instance) is
    begin
       This.Dst.Close;

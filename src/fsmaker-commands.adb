@@ -2,7 +2,6 @@ with Simple_Logging; use Simple_Logging;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
 
 with CLIC.User_Input;
-with CLIC.TTY;
 
 with FSmaker.Commands.Init;
 with FSmaker.Commands.Mkdir;
@@ -14,6 +13,8 @@ with FSmaker.Commands.Export;
 with FSmaker.Commands.Build;
 
 with FSmaker.Target.LittleFS;
+
+with AAA.Strings;
 
 package body FSmaker.Commands is
 
@@ -45,6 +46,12 @@ package body FSmaker.Commands is
                      "Path to the image file to create/modify");
 
       Define_Switch (Config,
+                     Sw_Size'Access,
+                     "-s=", "--size=",
+                     "Size (BLOCK_SIZE:NUMBER_OF_BLOCK) of the image file " &
+                       " to create/modify");
+
+      Define_Switch (Config,
                      "-h", "--help",
                      "Display general or command-specific help");
 
@@ -58,7 +65,6 @@ package body FSmaker.Commands is
                      "-d",
                      Long_Switch => "--debug",
                      Help        => "Enable debug-specific log messages");
-
 
       Define_Switch (Config,
                      CLIC.User_Input.Not_Interactive'Access,
@@ -106,6 +112,41 @@ package body FSmaker.Commands is
       Simple_Logging.Error (Str);
    end Put_Error;
 
+   ----------------------
+   -- Parse_Image_Size --
+   ----------------------
+
+   procedure Parse_Image_Size (This : in out Command) is
+      use AAA.Strings;
+
+      Size : constant String := Image_Size;
+
+      Vect : constant Vector := Split (Size, ':', Trim => True);
+
+      procedure Invalid is
+      begin
+         This.Usage_Error ("Invalid value of --size switch");
+      end Invalid;
+
+   begin
+      if Size = "" then
+         This.Usage_Error ("Missing required -s/--size switch");
+      end if;
+
+      case Vect.Count is
+         when 1 =>
+            This.Usage_Error ("Missing required ':' delimiter in size switch");
+         when 2 =>
+            This.Block_Size := Positive'Value (Vect.First_Element);
+            This.Number_Of_Blocks := Positive'Value (Vect.Last_Element);
+         when others =>
+            Invalid;
+      end case;
+   exception
+      when Constraint_Error =>
+         Invalid;
+   end Parse_Image_Size;
+
    -----------------
    -- Setup_Image --
    -----------------
@@ -115,15 +156,17 @@ package body FSmaker.Commands is
    is
       use CLIC.User_Input;
    begin
-      if Sw_Format = null or else Sw_Format.all = "" then
+      if Format = "" then
          This.Usage_Error ("Missing required -f/--format switch");
-      elsif Sw_Format.all /= "littlefs" then
+      elsif Format /= "littlefs" then
          This.Usage_Error ("Invalid format (-f/--format) must be 'littlefs'");
       end if;
 
-      if Sw_Image = null then
+      if Image_Path = "" then
          This.Usage_Error ("Missing required -i/--img switch");
       end if;
+
+      This.Parse_Image_Size;
 
       if To_Format then
 
@@ -150,7 +193,7 @@ package body FSmaker.Commands is
             if Query ("Do you want to continue?",
                       Valid    => (Yes | No => True, Always => False),
                       Default  => Yes) = Yes
-              then
+            then
                This.FD := Open_Read_Write (Image_Path, Binary);
             else
                This.Failure ("Cannot overwrite existing file");
@@ -174,9 +217,13 @@ package body FSmaker.Commands is
       end if;
 
       This.Target := new FSmaker.Target.LittleFS.Instance;
+      This.BD := FSmaker.Block_Device.File.Create
+        (This.FD,
+         Block_Size       => This.Block_Size,
+         Number_Of_Blocks => This.Number_Of_Blocks);
 
       if not To_Format then
-         This.Target.Mount (This.FD);
+         This.Target.Mount (This.BD);
       end if;
    end Setup_Image;
 

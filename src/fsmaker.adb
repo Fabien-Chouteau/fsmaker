@@ -1,7 +1,6 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 with Simple_Logging;
-with GNAT.OS_Lib;
 
 package body FSmaker is
 
@@ -36,6 +35,5 @@ package body FSmaker is
          end if;
       end loop;
    end Pretty_Print;
-
 
 end FSmaker;
