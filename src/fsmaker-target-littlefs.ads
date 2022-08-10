@@ -10,26 +10,26 @@ package FSmaker.Target.LittleFS is
    with private;
 
    overriding
-   procedure Format (This             : in out   Instance;
-                     BD               : not null Block_Device.Acc_Any);
+   procedure Format (This : in out   Instance;
+                     BD   : not null Block_Device.Acc_Any);
 
    overriding
    procedure Mount (This : in out Instance;
                     BD   : not null Block_Device.Acc_Any);
 
    overriding
-   procedure Make_Dir (This  : in out Instance;
-                       Path  :        Target_Path);
+   procedure Make_Dir (This : in out Instance;
+                       Path :        Target_Path);
 
    overriding
-   function Tree (This      : in out Instance;
-                  Path      :        Target_Path)
+   function Tree (This : in out Instance;
+                  Path :        Target_Path)
                   return Directory_Tree;
 
    overriding
-   procedure Import (This      : in out Instance;
-                     Path      :        Target_Path;
-                     Src       : in out Source.Class);
+   procedure Import (This : in out Instance;
+                     Path :        Target_Path;
+                     Src  : in out Source.Class);
 
    overriding
    procedure Cat (This : in out Instance;

@@ -19,16 +19,17 @@ package FSmaker.Block_Device.RAM is
 
 private
 
-
    type Data_Array is array (Positive range <>, Positive range <>)
      of System.Storage_Elements.Storage_Element;
 
    type Instance (Block_Size, Number_Of_Blocks : Positive)
-   is new Parent (Block_Size => Block_Size, Number_Of_Blocks => Number_Of_Blocks)
+   is new Parent (Block_Size       => Block_Size,
+                  Number_Of_Blocks => Number_Of_Blocks)
    with record
-      Data : Data_Array (1 .. Block_Size, 1 .. Number_Of_Blocks);
+      Data : Data_Array (1 .. Number_Of_Blocks, 1 .. Block_Size);
    end record;
 
+   overriding
    function Read (This            : in out Instance;
                   Block_Id        : Natural;
                   Offset_In_Block : Natural;
@@ -36,6 +37,7 @@ private
                   Size            : Natural)
                   return Result;
 
+   overriding
    function Program (This            : in out Instance;
                      Block_Id        : Natural;
                      Offset_In_Block : Natural;
@@ -43,11 +45,12 @@ private
                      Size            : Natural)
                      return Result;
 
+   overriding
    function Erase (This     : in out Instance;
                    Block_Id : Natural)
                    return Result;
 
+   overriding
    function Sync (This : in out Instance) return Result;
-
 
 end FSmaker.Block_Device.RAM;

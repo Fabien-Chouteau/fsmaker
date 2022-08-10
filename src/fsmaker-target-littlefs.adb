@@ -2,8 +2,6 @@ with Ada.Unchecked_Deallocation;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with System.Address_To_Access_Conversions;
 
-with GNAT.Source_Info;
-
 with System;
 with Interfaces;   use Interfaces;
 with Interfaces.C; use Interfaces.C;
@@ -16,15 +14,6 @@ package body FSmaker.Target.LittleFS is
 
    package BD_Ptr
    is new System.Address_To_Access_Conversions (Block_Device.Class);
-
-   function ftruncate (FS : int;
-                       Length : Long_Integer)
-                       return int;
-   pragma Import (C, ftruncate, "ftruncate");
-
-   function fsync (FS : int)
-                   return int;
-   pragma Import (C, fsync, "fsync");
 
    procedure Free is new Ada.Unchecked_Deallocation (LFS_Config,
                                                      LFS_Config_Access);
@@ -176,44 +165,16 @@ package body FSmaker.Target.LittleFS is
       end Create;
    end Backend;
 
-   ---------------
-   -- Error_Img --
-   ---------------
-
-   function Error_Img (Err : int) return String
-   is (case Err is
-          when LFS_ERR_OK          => "No error",
-          when LFS_ERR_IO          => "Error during device operation",
-          when LFS_ERR_CORRUPT     => "Corrupted",
-          when LFS_ERR_NOENT       => "No directory entry",
-          when LFS_ERR_EXIST       => "Entry already exists",
-          when LFS_ERR_NOTDIR      => "Entry is not a dir",
-          when LFS_ERR_ISDIR       => "Entry is a dir",
-          when LFS_ERR_NOTEMPTY    => "Dir is not empty",
-          when LFS_ERR_BADF        => "Bad file number",
-          when LFS_ERR_FBIG        => "File too large",
-          when LFS_ERR_INVAL       => "Invalid parameter",
-          when LFS_ERR_NOSPC       => "No space left on device",
-          when LFS_ERR_NOMEM       => "No more memory available",
-          when LFS_ERR_NOATTR      => "No data/attr available",
-          when LFS_ERR_NAMETOOLONG => "File name too long",
-          when others              => "Unknown LFS error (" & Err'Img & ")");
-
    ------------
    -- Format --
    ------------
 
    overriding
-   procedure Format (This             : in out   Instance;
-                     BD               : not null Block_Device.Acc_Any)
+   procedure Format (This : in out   Instance;
+                     BD   : not null Block_Device.Acc_Any)
    is
-      use GNAT.OS_Lib;
-
-      Size : constant Positive := BD.Block_Size * BD.Number_Of_Blocks;
       Unused : Integer;
-
       Err : int;
-
       Config : LFS_Config_Access;
    begin
       Config := Backend.Create (BD_Ptr.Object_Pointer (BD));
@@ -248,8 +209,8 @@ package body FSmaker.Target.LittleFS is
    --------------
 
    overriding
-   procedure Make_Dir (This      : in out Instance;
-                       Path      :        Target_Path)
+   procedure Make_Dir (This : in out Instance;
+                       Path :        Target_Path)
    is
       Err : int;
 
@@ -272,8 +233,8 @@ package body FSmaker.Target.LittleFS is
    ----------
 
    overriding
-   function Tree (This      : in out Instance;
-                  Path      :        Target_Path)
+   function Tree (This : in out Instance;
+                  Path :        Target_Path)
                   return Directory_Tree
    is
 
@@ -340,9 +301,9 @@ package body FSmaker.Target.LittleFS is
    ------------
 
    overriding
-   procedure Import (This      : in out Instance;
-                     Path      :        Target_Path;
-                     Src       : in out Source.Class)
+   procedure Import (This : in out Instance;
+                     Path :        Target_Path;
+                     Src  : in out Source.Class)
    is
       Err : int;
       File : aliased LFS_File;
@@ -362,7 +323,7 @@ package body FSmaker.Target.LittleFS is
       end if;
 
       declare
-         Buffer : array (1 .. 4046) of Unsigned_8;
+         Buffer : array (1 .. 4096) of Unsigned_8;
          Read_Len : Natural;
          Write_Len : Integer_32;
       begin

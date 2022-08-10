@@ -9,17 +9,20 @@ package body FSmaker.Block_Device.RAM is
    procedure Write_Data (This :        Instance;
                          Dst  : in out FSmaker.Sink.Class)
    is
-      Len : constant Natural := This.Data'Size / 8;
+      Len : constant Natural := This.Block_Size;
    begin
-      if Dst.Write (This.Data'Address, Len) /= Len then
-         raise Program_Error;
-      end if;
+      for Block in This.Data'Range (1) loop
+         if Dst.Write (This.Data (Block, 1)'Address, Len) /= Len then
+            raise Program_Error;
+         end if;
+      end loop;
    end Write_Data;
 
    ----------
    -- Read --
    ----------
 
+   overriding
    function Read (This            : in out Instance;
                   Block_Id        :        Natural;
                   Offset_In_Block :        Natural;
@@ -43,6 +46,7 @@ package body FSmaker.Block_Device.RAM is
    -- Program --
    -------------
 
+   overriding
    function Program (This            : in out Instance;
                      Block_Id        :        Natural;
                      Offset_In_Block :        Natural;
@@ -66,6 +70,7 @@ package body FSmaker.Block_Device.RAM is
    -- Erase --
    -----------
 
+   overriding
    function Erase (This     : in out Instance;
                    Block_Id :        Natural)
                    return Result
@@ -83,7 +88,9 @@ package body FSmaker.Block_Device.RAM is
    -- Sync --
    ----------
 
+   overriding
    function Sync (This : in out Instance) return Result is
+      pragma Unreferenced (This);
    begin
       return Ok;
    end Sync;
