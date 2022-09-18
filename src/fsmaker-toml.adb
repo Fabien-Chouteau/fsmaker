@@ -135,13 +135,19 @@ package body FSmaker.TOML is
       if Mk.Is_Null then
          Simple_Logging.Always ("No dirs to make");
          return; -- No dir to make
-      elsif Mk.Kind /= TOML_Array or else Mk.Item_Kind /= TOML_String then
+      elsif Mk.Kind /= TOML_Array then
          raise Program_Error with
-           "'mkdir' should be an array of strings (" &
+           "'mkdir' should be an array (got " &
            Mk.Kind'Img & ")";
       end if;
 
       for Index in 1 .. Mk.Length loop
+         if Mk.Item (Index).Kind /= TOML_String then
+            raise Program_Error with
+              "'mkdir' should be an array of strings (got " &
+              Mk.Item (Index).Kind'Img & ")";
+         end if;
+
          declare
             Dir : constant String := Mk.Item (Index).As_String;
          begin
