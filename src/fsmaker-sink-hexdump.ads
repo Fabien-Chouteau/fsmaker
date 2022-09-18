@@ -1,5 +1,3 @@
-with GNAT.OS_Lib;
-
 private with System;
 
 package FSmaker.Sink.Hexdump is
@@ -15,11 +13,13 @@ private
       Addr : Natural := 0;
    end record;
 
+   overriding
    function Write (This : in out Instance;
                    Addr :        System.Address;
                    Len  :        Natural)
                    return Natural;
 
+   overriding
    procedure Close (This : in out Instance);
 
 end FSmaker.Sink.Hexdump;

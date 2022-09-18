@@ -39,6 +39,7 @@ package body FSmaker.Block_Device.File is
    -- Read --
    ----------
 
+   overriding
    function Read (This            : in out Instance;
                   Block_Id        :        Natural;
                   Offset_In_Block :        Natural;
@@ -67,6 +68,7 @@ package body FSmaker.Block_Device.File is
    -- Program --
    -------------
 
+   overriding
    function Program (This            : in out Instance;
                      Block_Id        :        Natural;
                      Offset_In_Block :        Natural;
@@ -96,6 +98,7 @@ package body FSmaker.Block_Device.File is
    -- Erase --
    -----------
 
+   overriding
    function Erase (This     : in out Instance;
                    Block_Id :        Natural)
                    return Result
@@ -110,6 +113,7 @@ package body FSmaker.Block_Device.File is
    -- Sync --
    ----------
 
+   overriding
    function Sync (This : in out Instance) return Result is
    begin
       return Ok;

@@ -23,7 +23,8 @@ package body FSmaker.Commands.Init is
 
             This.Setup_Image (To_Format => True);
             if ftruncate (int (This.FD),
-                          Long_Integer (This.Block_Size * This.Number_Of_Blocks)) /= 0
+                          Long_Integer
+                            (This.Block_Size * This.Number_Of_Blocks)) /= 0
             then
                raise Program_Error with "ftruncate error: " &
                  GNAT.OS_Lib.Errno_Message;
@@ -37,7 +38,7 @@ package body FSmaker.Commands.Init is
             This.Success;
 
          when others =>
-           This.Failure ("Too many arguments");
+            This.Failure ("Too many arguments");
       end case;
    end Execute;
 

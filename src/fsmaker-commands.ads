@@ -5,7 +5,7 @@ private with GNAT.OS_Lib;
 private with CLIC.Subcommand.Instance;
 private with CLIC.TTY;
 private with FSmaker.Target;
-private with FSmaker.Block_Device.File;
+private with FSmaker.Block_Device;
 
 package FSmaker.Commands is
 

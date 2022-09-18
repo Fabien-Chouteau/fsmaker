@@ -12,6 +12,8 @@ with FSmaker.Commands.Hexdump;
 with FSmaker.Commands.Export;
 with FSmaker.Commands.Build;
 
+with FSmaker.Block_Device.File;
+
 with FSmaker.Target.LittleFS;
 
 with AAA.Strings;
