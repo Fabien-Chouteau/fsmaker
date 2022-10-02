@@ -1,4 +1,5 @@
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with System.Storage_Elements;
 
 with TOML; use TOML;
 with TOML.File_IO;
@@ -222,9 +223,10 @@ package body FSmaker.TOML is
       BD := FSmaker.Block_Device.File.Create (FD,
                                               Img_Info.Block_Size,
                                               Img_Info.Number_Of_Blocks);
-      T := new Target.LittleFS.Instance;
-      T.Format (BD);
+      T := new Target.LittleFS.Instance
+        (System.Storage_Elements.Storage_Count (Img_Info.Block_Size));
 
+      T.Format (BD);
       T.Mount (BD);
 
       declare

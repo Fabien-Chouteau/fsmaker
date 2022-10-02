@@ -18,3 +18,6 @@ clic = "*"
 
 [[pins]]
 clic = { url='https://github.com/alire-project/clic.git' }
+
+[configuration.values]
+littlefs.No_Malloc = true

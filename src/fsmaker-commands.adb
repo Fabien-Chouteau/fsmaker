@@ -1,5 +1,6 @@
 with Simple_Logging; use Simple_Logging;
 with GNAT.OS_Lib; use GNAT.OS_Lib;
+with System.Storage_Elements; use System.Storage_Elements;
 
 with CLIC.User_Input;
 
@@ -218,7 +219,9 @@ package body FSmaker.Commands is
          This.Failure ("Cannot open image file '" & Image_Path & "'");
       end if;
 
-      This.Target := new FSmaker.Target.LittleFS.Instance;
+      This.Target := new FSmaker.Target.LittleFS.Instance
+        (System.Storage_Elements.Storage_Count (This.Block_Size));
+
       This.BD := FSmaker.Block_Device.File.Create
         (This.FD,
          Block_Size       => This.Block_Size,

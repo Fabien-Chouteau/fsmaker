@@ -1,11 +1,13 @@
 with GNAT.OS_Lib;
+with System.Storage_Elements;
+
 private with Littlefs;
 
 package FSmaker.Target.LittleFS is
 
    subtype Parent is Filesystem;
 
-   type Instance
+   type Instance (Block_Size : System.Storage_Elements.Storage_Count)
    is new Parent
    with private;
 
@@ -40,12 +42,16 @@ private
 
    type LFS_Config_Access is access all Standard.Littlefs.LFS_Config;
 
-   type Instance
+   type Instance (Block_Size : System.Storage_Elements.Storage_Count)
    is new Parent
    with record
       FD  : aliased GNAT.OS_Lib.File_Descriptor;
       LFS : aliased Standard.Littlefs.LFS_T;
       Config : LFS_Config_Access;
+      Read_Buffer : System.Storage_Elements.Storage_Array (1 .. Block_Size);
+      Prog_Buffer : System.Storage_Elements.Storage_Array (1 .. Block_Size);
+      Lookahead_Buffer : System.Storage_Elements.Storage_Array
+        (1 .. Block_Size);
    end record;
 
 end FSmaker.Target.LittleFS;

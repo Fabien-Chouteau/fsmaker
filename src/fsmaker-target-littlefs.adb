@@ -19,7 +19,10 @@ package body FSmaker.Target.LittleFS is
                                                      LFS_Config_Access);
 
    package Backend is
-      function Create (BD : BD_Ptr.Object_Pointer)
+      function Create (BD               : BD_Ptr.Object_Pointer;
+                       Read_Buffer      : System.Address;
+                       Prog_Buffer      : System.Address;
+                       Lookahead_Buffer : System.Address)
                        return LFS_Config_Access;
 
    end Backend;
@@ -135,7 +138,11 @@ package body FSmaker.Target.LittleFS is
       -- Create --
       ------------
 
-      function Create (BD : BD_Ptr.Object_Pointer) return LFS_Config_Access
+      function Create (BD               : BD_Ptr.Object_Pointer;
+                       Read_Buffer      : System.Address;
+                       Prog_Buffer      : System.Address;
+                       Lookahead_Buffer : System.Address)
+                       return LFS_Config_Access
       is
          Ret : constant LFS_Config_Access := new LFS_Config;
 
@@ -155,9 +162,9 @@ package body FSmaker.Target.LittleFS is
          Ret.Block_Cycles := 700;
          Ret.Cache_Size := Ret.Block_Size;
          Ret.Lookahead_Size := Ret.Block_Size;
-         Ret.Read_Buffer := System.Null_Address;
-         Ret.Prog_Buffer := System.Null_Address;
-         Ret.Lookahead_Buffer := System.Null_Address;
+         Ret.Read_Buffer := Read_Buffer;
+         Ret.Prog_Buffer := Prog_Buffer;
+         Ret.Lookahead_Buffer := Lookahead_Buffer;
          Ret.Name_Max := 0;
          Ret.File_Max := 0;
          Ret.Attr_Max := 0;
@@ -177,7 +184,10 @@ package body FSmaker.Target.LittleFS is
       Err : int;
       Config : LFS_Config_Access;
    begin
-      Config := Backend.Create (BD_Ptr.Object_Pointer (BD));
+      Config := Backend.Create (BD_Ptr.Object_Pointer (BD),
+                                This.Read_Buffer'Address,
+                                This.Prog_Buffer'Address,
+                                This.Lookahead_Buffer'Address);
       Err := Format (This.LFS, Config.all);
       Free (Config);
 
@@ -196,7 +206,10 @@ package body FSmaker.Target.LittleFS is
    is
       Err : int;
    begin
-      This.Config := Backend.Create (BD_Ptr.Object_Pointer (BD));
+      This.Config := Backend.Create (BD_Ptr.Object_Pointer (BD),
+                                     This.Read_Buffer'Address,
+                                     This.Prog_Buffer'Address,
+                                     This.Lookahead_Buffer'Address);
 
       Err := Mount (This.LFS, This.Config.all);
       if Err /= 0 then
@@ -310,14 +323,23 @@ package body FSmaker.Target.LittleFS is
 
       Full_Path : constant String := "/" & Path.Flatten ("/");
       Dir_Path : Target_Path := Path;
+
+      Conf_Buffer : System.Storage_Elements.Storage_Array
+        (1 .. This.Block_Size);
+
+      Config : aliased lfs_file_config;
    begin
+      Config.Buffer := Conf_Buffer'Address;
+
       --  Remove filename from the path
       Dir_Path.Delete_Last;
 
       --  Make sure the directory hierarchy exists
       This.Make_Dir (Dir_Path);
 
-      Err := Open (This.LFS, File, Full_Path, LFS_O_CREAT or LFS_O_WRONLY);
+      Err := Opencfg (This.LFS, File, Full_Path,
+                      LFS_O_CREAT or LFS_O_WRONLY,
+                      Config);
       if Err /= LFS_ERR_OK then
          raise Program_Error with "import: " & Error_Img (Err);
       end if;
