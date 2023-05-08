@@ -18,6 +18,22 @@ package body FSmaker.Block_Device.RAM is
       end loop;
    end Write_Data;
 
+   ---------------
+   -- Read_Data --
+   ---------------
+
+   procedure Read_Data (This :        Instance;
+                        Src  : in out FSmaker.Source.Class)
+   is
+      Len : constant Natural := This.Block_Size;
+   begin
+      for Block in This.Data'Range (1) loop
+         if Src.Read (This.Data (Block, 1)'Address, Len) /= Len then
+            raise Program_Error;
+         end if;
+      end loop;
+   end Read_Data;
+
    ----------
    -- Read --
    ----------

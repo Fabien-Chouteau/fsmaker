@@ -1,5 +1,6 @@
 with System;
 with FSmaker.Sink;
+with FSmaker.Source;
 
 private with System.Storage_Elements;
 
@@ -16,6 +17,10 @@ package FSmaker.Block_Device.RAM is
    procedure Write_Data (This :        Instance;
                          Dst  : in out FSmaker.Sink.Class);
    --  Write the entire content of the block device data in Dst
+
+   procedure Read_Data (This :        Instance;
+                        Src  : in out FSmaker.Source.Class);
+   --  Read the entire content of the block device data from Src
 
 private
 
